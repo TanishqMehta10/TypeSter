@@ -9,7 +9,7 @@ import TypingScreen from './components/TypingScreen';
 import ResultsScreen from './components/ResultsScreen';
 import { supabase, CodeSnippet, PracticeSession } from './lib/supabase';
 import { PracticeConfig, TypingStats } from './types';
-import { seedDatabase } from './utils/seedData';
+import { seedDatabase, codeSnippets } from './utils/seedData';
 
 type AppState = 'landing' | 'login' | 'signup' | 'setup' | 'loading' | 'typing' | 'results';
 
@@ -60,8 +60,33 @@ function App() {
     }
   };
 
-  // Fetch a snippet matching config, with fallback
+  // Fetch a snippet matching config, with fallback to local snippets when Supabase is not configured
   const fetchSnippet = async (cfg: PracticeConfig) => {
+    const useLocalFallback = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const pickRandom = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
+
+    // If Supabase isn't configured (e.g. no project), use local snippets from seedData
+    if (useLocalFallback) {
+      const minTime = Math.max(cfg.duration - 30, 20);
+      const maxTime = cfg.duration + 30;
+
+      const filtered = codeSnippets.filter((s) => {
+        if (s.language !== cfg.language) return false;
+        if (s.category !== cfg.mode) return false;
+        if (cfg.mode === 'dsa' && cfg.topic && s.topic !== cfg.topic) return false;
+        if (s.estimated_time < minTime || s.estimated_time > maxTime) return false;
+        return true;
+      });
+
+      if (!filtered || filtered.length === 0) {
+        throw new Error('No code snippets available for this configuration');
+      }
+
+      return pickRandom(filtered) as CodeSnippet;
+    }
+
+    // Otherwise use Supabase as before
     let query = supabase
       .from('code_snippets')
       .select('*')

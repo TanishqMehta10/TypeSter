@@ -10,7 +10,7 @@ interface SnippetData {
   title: string;
 }
 
-const codeSnippets: SnippetData[] = [
+export const codeSnippets: SnippetData[] = [
   {
     language: 'python',
     category: 'random',
