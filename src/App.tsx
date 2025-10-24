@@ -23,7 +23,10 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    seedDatabase();
+    // Only seed the database in development to avoid client-side writes in production builds
+    if (import.meta.env.DEV) {
+      seedDatabase();
+    }
   }, []);
 
   useEffect(() => {
